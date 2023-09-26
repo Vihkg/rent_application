@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:rent_application/helpers/helpers.dart';
 import 'package:rent_application/helpers/message_exception.dart';
@@ -28,7 +29,11 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _obscurePassword = true;
   final _auth = FirebaseAuth.instance;
   String _verificationID = '';
+
   bool codeSumbit = false;
+  bool codeVerify = true;
+  final _pinPutController = TextEditingController();
+
   TextEditingController _phone = TextEditingController();
 
   getPage() {
@@ -181,7 +186,26 @@ class _AuthScreenState extends State<AuthScreen> {
                                             MediaQuery.of(context).size.width /
                                                 10),
                                     child: PinPut(
-                                        onSubmit: (value) async {},
+                                        onSubmit: (value) async {
+                                          try {
+                                            bool value =
+                                                await fbAuth.submitCode(
+                                                    code:
+                                                        _pinPutController.text,
+                                                    verificationId:
+                                                        _verificationID,
+                                                    context: context);
+                                            if (!value) {
+                                              setState(() {
+                                                codeVerify = false;
+                                              });
+                                            }
+                                          } on MessageException catch (e) {
+                                            CustomSnackBar(context,
+                                                Text(e.message), Colors.red);
+                                          }
+                                        },
+                                        controller: _pinPutController,
                                         fieldsCount: 6,
                                         fieldsAlignment:
                                             MainAxisAlignment.spaceAround,
@@ -195,6 +219,16 @@ class _AuthScreenState extends State<AuthScreen> {
                                           color:
                                               Color.fromRGBO(197, 206, 224, 1),
                                         )),
+                                  ),
+                                  if (!codeVerify)
+                                    Text('Неверный код',
+                                        style: TextStyle(fontSize: 14)),
+                                  SizedBox(
+                                    height: 74,
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: _phoneAuth,
+                                    child: Text('Отправить повторно'),
                                   ),
                                 ],
                               ),

@@ -7,17 +7,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:rent_application/helpers/constant_firebase.dart';
 import 'package:rent_application/helpers/message_exception.dart';
-
-//import 'package:flutter_facebook_login/flutter_facebook_login.dart';
+import 'package:rent_application/screens/RegisterAccountScreen.dart';
+import 'package:rent_application/screens/TabNavigator.dart';
 
 class FireBaseAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  //static final FacebookLogin facebookSignIn = new FacebookLogin();
 
   late String verification;
   late bool result;
+
+  static get fbFirestore => null;
 
   Future<void> linkEmailAndPhone(
       {required String email,
@@ -103,7 +103,10 @@ class FireBaseAuth {
           verificationId: verificationId, smsCode: code);
       await _auth.signInWithCredential(phoneAuthCredential).then((result) {
         if (_auth.currentUser != null) {
+          print('Отправка кода выполнилась делаем редирект');
           _redirectAuthUser(context!);
+        } else {
+          print('Ничего не делаем');
         }
       });
       return true;
@@ -117,11 +120,12 @@ class FireBaseAuth {
       {required String phone,
       required String smsCode,
       required Function func}) async {
+    print('Номер телефона: $phone');
     await _auth.verifyPhoneNumber(
-      phoneNumber: '+7 963 000-81-02',
+      phoneNumber: phone,
       verificationCompleted: (PhoneAuthCredential credential) async {
         // Авторизация пользователя (или ссылка) с автоматически созданными учетными данными
-        // await _auth.signInWithCredential(credential);
+        await _auth.signInWithCredential(credential);
       },
       verificationFailed: (FirebaseAuthException e) {
         // Обработчик ошибок
@@ -178,16 +182,39 @@ class FireBaseAuth {
     DocumentSnapshot documentSnapshot =
         await fbFirestore.collection('users').doc(_auth.currentUser!.uid).get();
     var user;
-    // if (documentSnapshot != null && documentSnapshot.exists) {
-    //   user = ProfileModel.fromJson(documentSnapshot.data());
-    //   if (user.name != null) {
-    //     Navigator.pushNamed(context, 'tabNavigator');
-    //   } else {
-    //     Navigator.pushNamed(context, 'registrationScreen');
-    //   }
-    // } else {
-    //   Navigator.pushNamed(context, 'registrationScreen');
-    // }
+    if (documentSnapshot != null && documentSnapshot.exists) {
+      if (user.name != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => TabNavigator()),
+        );
+      } else {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => RegisterAccountScreen()),
+        );
+      }
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => RegisterAccountScreen()),
+      );
+    }
+  }
+
+  static Future<Object?> addUser(
+      {required String name,
+      required String uid,
+      required BuildContext context}) async {
+    return fbFirestore
+        .collection('users')
+        .doc(uid)
+        .set({
+          'name': name, // John Doe
+
+          'uid': uid, // 42
+        })
+        .then((value) => Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => TabNavigator()),
+            ))
+        .catchError((error) => print("Failed to add user: $error"));
   }
 }
 
