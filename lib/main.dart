@@ -25,15 +25,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling a background message: ${message.messageId}");
 }
 
-final routerDelegate = BeamerDelegate(
-  initialPath: '/a',
-  locationBuilder: RoutesLocationBuilder(
-    routes: {
-      '*': (context, state, data) => const ScaffoldWithBottomNavBar(),
-    },
-  ),
-);
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
